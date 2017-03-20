@@ -5,8 +5,6 @@ import logging
 import time
 import random
 
-from pgoapi.exceptions import AuthException
-
 from .utils import in_radius
 
 log = logging.getLogger(__name__)
@@ -44,7 +42,7 @@ def check_login(args, account, api, position, proxy_url):
                     username=account['username'],
                     password=account['password'])
             break
-        except AuthException:
+        except Exception:
             num_tries += 1
             log.error(
                 ('Failed to login to Pokemon Go with account %s. ' +

@@ -35,11 +35,6 @@ from collections import deque
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
 
-from pgoapi import PGoApi
-from pgoapi.utilities import f2i
-from pgoapi import utilities as util
-from pgoapi.hash_server import HashServer
-
 from .models import parse_map, GymDetails, parse_gyms, MainWorker, WorkerStatus
 from .fakePogoApi import FakePogoApi
 from .utils import now, generate_device_info
@@ -780,8 +775,7 @@ def search_worker_thread(args, account_queue, account_failures,
                 api = FakePogoApi(args.mock)
             else:
                 device_info = generate_device_info()
-                api = PGoApi(device_info=device_info)
-
+                
             # New account - new proxy.
             if args.proxy:
                 # If proxy is not assigned yet or if proxy-rotation is defined
@@ -1099,13 +1093,7 @@ def search_worker_thread(args, account_queue, account_failures,
 
                 if args.hash_key:
                     key_instance = key_scheduler.keys[key_scheduler.current()]
-                    key_instance['remaining'] = HashServer.status.get(
-                        'remaining', 0)
-
-                    if key_instance['maximum'] == 0:
-                        key_instance['maximum'] = HashServer.status.get(
-                            'maximum', 0)
-
+                    
                     peak = key_instance['maximum'] - key_instance['remaining']
 
                     if key_instance['peak'] < peak:
@@ -1151,13 +1139,8 @@ def map_request(api, position, no_jitter=False):
                   scan_location[0], scan_location[1], scan_location[2])
 
     try:
-        cell_ids = util.get_cell_ids(scan_location[0], scan_location[1])
         timestamps = [0, ] * len(cell_ids)
         req = api.create_request()
-        response = req.get_map_objects(latitude=f2i(scan_location[0]),
-                                       longitude=f2i(scan_location[1]),
-                                       since_timestamp_ms=timestamps,
-                                       cell_id=cell_ids)
         response = req.check_challenge()
         response = req.get_hatched_eggs()
         response = req.get_inventory()
@@ -1178,11 +1161,6 @@ def gym_request(api, position, gym):
                   gym['latitude'], gym['longitude'],
                   calc_distance(position, [gym['latitude'], gym['longitude']]))
         req = api.create_request()
-        x = req.get_gym_details(gym_id=gym['gym_id'],
-                                player_latitude=f2i(position[0]),
-                                player_longitude=f2i(position[1]),
-                                gym_latitude=gym['latitude'],
-                                gym_longitude=gym['longitude'])
         x = req.check_challenge()
         x = req.get_hatched_eggs()
         x = req.get_inventory()
